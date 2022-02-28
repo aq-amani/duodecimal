@@ -1,6 +1,11 @@
+from sympy import *
+from sympy import core as cr
+from decimal import Decimal, getcontext
+
+#getcontext().prec = 1000
 class BaseConverter:
     ''' class to represent numbers in diferent bases
-     
+
     Input:
     ------
         numbers : either string (baseX) or float/int (base10)
@@ -8,9 +13,9 @@ class BaseConverter:
 
     Variables:
     ----------
-        value : holds the decimal value 
-        string : holds the representation in BaseConverter.base 
-        
+        value : holds the decimal value
+        string : holds the representation in BaseConverter.base
+
     http://www.dozenal.org/drupal/sites_bck/default/files/DSA-ConversionRules_0.pdf
     '''
     bases = {
@@ -23,11 +28,11 @@ class BaseConverter:
 
     def __init__(self,number,digits):
         ''' determine type of input and convert to decimal/duodecimal '''
-        
-        self.digits = digits
-        self.base   = len(digits)    
 
-        if type(number) == int or type(number) == float:
+        self.digits = digits
+        self.base   = len(digits)
+
+        if type(number) == int or type(number) == float or type(number) == cr.numbers.Float or type(number) ==Decimal:
             self.value  = number
             self.string = BaseConverter.from_dec(number,digits)
         elif type(number) == str:
@@ -35,16 +40,16 @@ class BaseConverter:
             self.string = number
         elif isinstance(number,BaseConverter):
             self.value  = number.value
-            self.string = BaseConverter.from_dec(number,digits) 
+            self.string = BaseConverter.from_dec(number,digits)
         else:
             raise TypeError('input type must be str or float/int')
-    
+
     @staticmethod
     def from_dec(number,digits=None,base=None):
         ''' convert decimal float/int to duodecimal string '''
 
         if digits:
-            base = len(digits) 
+            base = len(digits)
             to_digits = {k: v for k,v in enumerate(digits)}
         elif base:
             to_digits = {k: v for k,v in enumerate(BaseConverter.bases[base])}
@@ -56,7 +61,7 @@ class BaseConverter:
         else:
             sign = ''
         integer, fractional = divmod(number,1)
-        
+
         out = []
         quotient = integer
         while quotient != 0:
@@ -66,7 +71,7 @@ class BaseConverter:
 
         if fractional:
             out = []
-            remainder = fractional 
+            remainder = fractional
             for i in range(len(str(fractional).split('.')[1])+1):
                 quotient, remainder = divmod(remainder*base,1)
                 out.append(quotient)
@@ -75,15 +80,15 @@ class BaseConverter:
             decimal = '.' + ''.join([to_digits[dig] for dig in out])
         else:
             decimal = ''
-            
+
         return sign + integer + decimal.rstrip('0')
-   
+
     @staticmethod
     def to_dec(string,digits=None,base=None):
         ''' convert string to decimal float/int '''
 
         if digits:
-            base = len(digits) 
+            base = len(digits)
             from_digits = {v: k for k,v in enumerate(digits)}
         elif base:
             from_digits = {v: k for k,v in enumerate(BaseConverter.bases[base])}
@@ -94,24 +99,24 @@ class BaseConverter:
             sign = -1
         else:
             sign = 1
-            
+
         if set(string) > set(digits+'.'):
             invalid = set(string) - set(digits+'.')
             raise ValueError('invalid character'.format(invalid))
-        
+
         if '.' in string:
             integer, fractional = string.split('.')
         else:
             integer, fractional = string, ''
-        
+
         out = 0
         for power, digit in enumerate(integer[::-1]):
             out += from_digits[digit] * base**power
         for power, digit in enumerate(str(fractional),1):
             out += from_digits[digit] * base**(-power)
-            
+
         return out
-    
+
     def __add__(self,other):
         if not isinstance(other, BaseConverter):
             other = BaseConverter(other,self.digits)
@@ -141,7 +146,7 @@ class BaseConverter:
 
     def __rsub__(self,other):
         return BaseConverter(other,self.digits) - self
-    
+
     def __mul__(self,other):
         if not isinstance(other, BaseConverter):
             other = BaseConverter(other,self.digits)
@@ -161,7 +166,7 @@ class BaseConverter:
         if not isinstance(other, BaseConverter):
             other = BaseConverter(other,self.digits)
         return BaseConverter(self.value / other.value,self.digits)
- 
+
     def __itruediv__(self,other):
         if not isinstance(other, BaseConverter):
             other = BaseConverter(other,self.digits)
@@ -176,7 +181,7 @@ class BaseConverter:
         if not isinstance(other, BaseConverter):
             other = BaseConverter(other,self.digits)
         return BaseConverter(self.value ** other.value,self.digits)
- 
+
     def __ipow__(self,other):
         if not isinstance(other, BaseConverter):
             other = BaseConverter(other,self.digits)
@@ -188,7 +193,7 @@ class BaseConverter:
         return BaseConverter(other,self.digits) ** self
 
     def __repr__(self):
-        if '.' in self.string: 
+        if '.' in self.string:
             return self.string[:7].rstrip('0') + f'(base{self.base})'
         else:
             return self.string + f'(base{self.base})'
@@ -235,13 +240,13 @@ class BaseConverter:
 
     def to_base(self,base):
         ''' give out in different base '''
-        return BaseConverter.from_dec(self.value,base=base) 
+        return BaseConverter.from_dec(self.value,base=base)
 
 class duo(BaseConverter):
-    ''' class to represent duodecimal numbers 
-     
+    ''' class to represent duodecimal numbers
+
      0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , X , E
-     
+
     Input:
     ------
         either string (base12) or float/int (base10)
@@ -258,7 +263,11 @@ class hexa(BaseConverter):
     def __init__(self,number):
         BaseConverter.__init__(self,number,'0123456789ABCDEF')
 
+#from sympy import *
 if __name__ == '__main__':
-    a = duo(2)
-    a /= 4
+    a = N(sqrt(2), 1100)
+    #a_d = Decimal(str(a))
+    b = duo(a)
+    #a /= 4
     print(a)
+    print('\n', b)
